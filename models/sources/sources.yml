@@ -1,0 +1,24 @@
+version: 2
+
+sources:
+  - name: nyc_citi_bike_raw
+    database: NYC_CITI_BIKE
+    schema: PUBLIC
+    tables:
+      - name: NYC_WEATHER_RAW
+        columns:
+          - name: LOGICAL_DATE
+          - name: LOADED_AT
+          - name: RAW_JSON
+
+      - name: NYC_CITI_BIKE_STATION_STATUS_RAW
+        columns:
+          - name: LOGICAL_DATE
+          - name: LOADED_AT
+          - name: RAW_JSON
+
+      - name: NYC_CITI_BIKE_STATION_INFORMATION_RAW
+        columns:
+          - name: LOGICAL_DATE
+          - name: LOADED_AT
+          - name: RAW_JSON

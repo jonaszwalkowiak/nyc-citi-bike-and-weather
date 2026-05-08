@@ -1,0 +1,29 @@
+name: 'snowflake_data_sedum'
+version: '1.1.0'
+config-version: 2
+
+profile: 'snowflake_data_sedum'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+vars:
+  tpch_schema: TPCH_SF10
+
+models:
+  snowflake_data_sedum:
+    raw:
+      +materialized: view
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table
