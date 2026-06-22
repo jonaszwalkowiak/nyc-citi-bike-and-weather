@@ -1,0 +1,23 @@
+# dbt artefakty i logi
+target/
+logs/
+dbt_packages/
+package-lock.yml
+
+# Poświadczenia / konfiguracja połączenia
+profiles.yml
+*.p8
+*.pem
+*.key
+_SNOWFLAKE.sql
+
+# Śmieci systemowe
+.DS_Store
+**/.DS_Store
+
+# Środowiska
+.env
+.env.*
+venv/
+.venv/
+__pycache__/
