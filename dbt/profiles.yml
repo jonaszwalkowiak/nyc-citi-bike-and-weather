@@ -1,0 +1,20 @@
+# CLI-ONLY profile for ad-hoc dbt (e.g. `make dbt ARGS="build"`).
+#
+# The `dbt_transform` Airflow DAG does NOT read this file — Cosmos generates the
+# profile from the `dbt_snowflake_conn_id` Airflow connection instead (single
+# source of truth). This file exists only so you can also run dbt straight from
+# the shell. All values come from environment variables (injected from .env by
+# docker-compose), so there are NO secrets here.
+snowflake_data_sedum:
+  target: prod
+  outputs:
+    prod:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE') }}"
+      schema: "{{ env_var('SNOWFLAKE_SCHEMA') }}"
+      threads: 4

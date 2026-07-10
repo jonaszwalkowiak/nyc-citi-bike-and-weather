@@ -1,0 +1,14 @@
+{
+  // Local dev venv for the dockerized ELT. Runtime is Docker; this venv exists
+  // ONLY so the editor (Pylance) resolves airflow / cosmos / snowflake imports.
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+
+  // Let Pylance resolve module-relative imports the DAGs use, e.g.
+  // `from assets import STATION_INFORMATION_ASSET` (Airflow puts dags/ on sys.path).
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/dags"
+  ],
+
+  "python.terminal.activateEnvironment": true,
+  "python.analysis.autoImportCompletions": true
+}

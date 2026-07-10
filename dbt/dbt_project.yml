@@ -16,13 +16,8 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
-vars:
-  tpch_schema: TPCH_SF10
-
 models:
   snowflake_data_sedum:
-    raw:
-      +materialized: view
     staging:
       +materialized: view
     marts:

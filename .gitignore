@@ -1,23 +1,34 @@
-# dbt artefakty i logi
-target/
-logs/
-dbt_packages/
-package-lock.yml
-
-# Poświadczenia / konfiguracja połączenia
-profiles.yml
+# Secrets / credentials
+.env
+secrets/*
+!secrets/.gitkeep
 *.p8
 *.pem
 *.key
-_SNOWFLAKE.sql
 
-# Śmieci systemowe
+# Airflow runtime dirs (mounted volumes) — keep the dir (for the bind mount),
+# ignore the runtime contents.
+logs/*
+!logs/.gitkeep
+plugins/*
+!plugins/.gitkeep
+config/*
+!config/.gitkeep
+
+# dbt artefacts
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+dbt/package-lock.yml
+dbt/.user.yml
+
+# Local tooling
+.claude/settings.local.json
+
+# Local dev virtualenv (for IDE import resolution only; runtime uses Docker)
+.venv/
+
+# OS junk
 .DS_Store
 **/.DS_Store
-
-# Środowiska
-.env
-.env.*
-venv/
-.venv/
 __pycache__/

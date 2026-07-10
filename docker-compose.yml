@@ -1,0 +1,150 @@
+# NYC Citi Bike + Weather — ELT stack (Airflow 3.3 + dbt via Cosmos + Snowflake)
+#
+# Base image: Astro Runtime 3.3-2 (Airflow 3.3.0). LocalExecutor (no Redis/Celery).
+# Custom image bundles the Snowflake/HTTP providers, Cosmos, and dbt-snowflake
+# (in an isolated venv). AIRFLOW_HOME is /usr/local/airflow on this image.
+#
+# The ONLY file you edit is .env (copy it from .env.example).
+---
+name: airflow-dbt-snowflake-modern-data-stack
+
+x-airflow-common:
+  &airflow-common
+  build:
+    context: ./docker
+    dockerfile: Dockerfile
+  image: nyc-elt/airflow:3.3
+  env_file:
+    - .env
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    # SimpleAuthManager (built-in) in login-free dev mode — the Astro image ships
+    # no FAB provider and defaults to the cloud AstroAuthManager, so we override it.
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.api_fastapi.auth.managers.simple.simple_auth_manager.SimpleAuthManager
+    AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: 'true'
+    # Shared secrets so all components trust each other (execution API + UI sessions)
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET:-local-dev-jwt-secret-change-me-0123456789}
+    AIRFLOW__API__SECRET_KEY: ${AIRFLOW_SECRET_KEY:-local-dev-secret-key-change-me-0123456789}
+    # NOTE: the port (:5432) is REQUIRED — the Astro entrypoint waits for the DB
+    # via `nc HOST PORT` parsed from this string; without a port it loops forever.
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+    AIRFLOW__CORE__FERNET_KEY: ''
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+    # Fast DAG parsing for dev: re-parse each DAG file every 20s AND rescan the
+    # dags/ folder for new/removed files every 20s (defaults are 30s / 300s).
+    AIRFLOW__DAG_PROCESSOR__MIN_FILE_PROCESS_INTERVAL: '20'
+    AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL: '20'
+    # --- Connections injected from .env (mirrors the working VPS setup) ---
+    # dbt_snowflake_conn_id: key-pair auth via INLINE PEM text (private_key_content),
+    # UNENCRYPTED key, password empty. The PEM lives in SNOWFLAKE_PRIVATE_KEY_CONTENT
+    # in .env (one line, newlines as \n). This env-var connection is the single
+    # source of truth — it takes precedence over any UI/metastore connection.
+    AIRFLOW_CONN_DBT_SNOWFLAKE_CONN_ID: '{"conn_type": "snowflake", "login": "${SNOWFLAKE_USER}", "password": "", "schema": "${SNOWFLAKE_SCHEMA}", "extra": {"account": "${SNOWFLAKE_ACCOUNT}", "warehouse": "${SNOWFLAKE_WAREHOUSE}", "database": "${SNOWFLAKE_DATABASE}", "role": "${SNOWFLAKE_ROLE}", "private_key_content": "${SNOWFLAKE_PRIVATE_KEY_CONTENT}"}}'
+    AIRFLOW_CONN_NYC_CITI_BIKE: '{"conn_type": "http", "host": "https://gbfs.citibikenyc.com"}'
+    AIRFLOW_CONN_NYC_WEATHER: '{"conn_type": "http", "host": "https://api.openweathermap.org", "password": "${OPENWEATHER_API_KEY}"}'
+  volumes:
+    - ./dags:/usr/local/airflow/dags
+    - ./logs:/usr/local/airflow/logs
+    - ./config:/usr/local/airflow/config
+    - ./plugins:/usr/local/airflow/plugins
+    - ./dbt:/usr/local/airflow/dbt
+    - ./secrets:/usr/local/airflow/secrets:ro
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on:
+    &airflow-common-depends-on
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+
+  airflow-apiserver:
+    <<: *airflow-common
+    command: airflow api-server
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: airflow scheduler
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-dag-processor:
+    <<: *airflow-common
+    command: airflow dag-processor
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type DagProcessorJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-triggerer:
+    <<: *airflow-common
+    command: airflow triggerer
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  # One-shot: run the DB migration. The Astro Runtime entrypoint does NOT do this
+  # automatically (unlike the vanilla apache/airflow image), so we run it here.
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - airflow db migrate
+
+volumes:
+  postgres-db-volume:

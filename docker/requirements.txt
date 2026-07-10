@@ -1,0 +1,6 @@
+# Installed into the Airflow environment (see docker/Dockerfile).
+# dbt itself lives in an isolated venv (/opt/dbt-venv), NOT here, to avoid
+# dependency clashes between dbt-core and Airflow.
+apache-airflow-providers-snowflake
+apache-airflow-providers-http
+astronomer-cosmos>=1.10
