@@ -6,20 +6,20 @@ models:
     columns:
       - name: observed_at
         description: "Observation timestamp reported by OpenWeather (UTC)."
-        tests: [not_null]
+        data_tests: [not_null]
       - name: loaded_at
-        tests: [not_null]
+        data_tests: [not_null]
 
   - name: stg_nyc_citi_bike_station_information
     description: "Latest snapshot of Citi Bike stations — one row per station."
     columns:
       - name: station_id
-        tests: [not_null, unique]
+        data_tests: [not_null, unique]
       - name: station_name
-        tests: [not_null]
+        data_tests: [not_null]
 
   - name: stg_nyc_citi_bike_station_status
     description: "Every station-availability snapshot — one row per station per load."
     columns:
       - name: station_id
-        tests: [not_null]
+        data_tests: [not_null]

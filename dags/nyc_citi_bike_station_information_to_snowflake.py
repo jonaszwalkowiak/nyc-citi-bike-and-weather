@@ -19,7 +19,7 @@ DEFAULT_ARGS = {
     default_args=DEFAULT_ARGS,
     schedule="@daily",
     catchup=False,
-    start_date=datetime(2026, 5, 8),
+    start_date=datetime(2026, 4, 30),
     max_active_runs=1,
 )
 def nyc_citi_bike_station_information_to_snowflake():

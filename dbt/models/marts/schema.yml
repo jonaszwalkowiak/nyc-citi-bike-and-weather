@@ -5,10 +5,10 @@ models:
     description: "Daily NYC weather summary — one row per calendar day."
     columns:
       - name: weather_date
-        tests: [not_null, unique]
+        data_tests: [not_null, unique]
 
   - name: mart_citi_bike_station_availability
     description: "Current bike/dock availability per Citi Bike station — one row per station."
     columns:
       - name: station_id
-        tests: [not_null, unique]
+        data_tests: [not_null, unique]

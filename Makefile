@@ -33,7 +33,7 @@ ps:  ## List running services
 
 dbt:  ## Run dbt ad hoc, e.g. make dbt ARGS="build"
 	$(COMPOSE) run --rm airflow-scheduler \
-		/opt/dbt-venv/bin/dbt --project-dir /usr/local/airflow/dbt --profiles-dir /usr/local/airflow/dbt $(ARGS)
+		/opt/dbt-venv/bin/dbt $(ARGS) --project-dir /usr/local/airflow/dbt --profiles-dir /usr/local/airflow/dbt
 
 clean:  ## Stop the stack and delete volumes (WIPES the Airflow metadata DB)
 	$(COMPOSE) down -v

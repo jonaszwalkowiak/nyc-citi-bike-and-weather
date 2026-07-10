@@ -13,6 +13,8 @@ profile at runtime from the SAME Airflow connection the EL DAGs use
 auth using the inline PEM stored in the connection's `private_key_content`. That
 makes the Airflow connection the single source of truth for Snowflake creds.
 """
+from datetime import timedelta
+
 from cosmos import (
     DbtDag,
     ExecutionConfig,
@@ -69,5 +71,8 @@ dbt_transform = DbtDag(
     # the EL DAGs via dags/assets.py (Airflow couples producer/consumer by name).
     schedule=[WEATHER_ASSET, STATION_STATUS_ASSET, STATION_INFORMATION_ASSET],
     catchup=False,
+    # Same owner/retry policy as the EL DAGs; Cosmos renders each model/test as
+    # its own task, so retries here mean per-model retries.
+    default_args={"owner": "JW", "retries": 2, "retry_delay": timedelta(minutes=5)},
     tags=["nyc_citi_bike_and_weather", "dbt"],
 )

@@ -8,14 +8,17 @@ OpenWeather API key in a single `.env` file.
 Extract + Load (Airflow)                     Transform (dbt via Cosmos)
 ┌─────────────────────────────┐              ┌──────────────────────────┐
 │ nyc_weather        @hourly  │──▶ Asset ─┐  │ dbt_transform            │
-│ station_status     */15 min │──▶ Asset ─┼─▶│  stg_nyc_weather (view)  │
-│ station_information @daily  │──▶ Asset ─┘  │  mart_nyc_weather_daily  │
-└─────────────────────────────┘              └──────────────────────────┘
-        HttpOperator → Snowflake RAW               Snowflake analytics
+│ station_status     */15 min │──▶ Asset ─┼─▶│  staging: 3 views        │
+│ station_information @daily  │──▶ Asset ─┘  │  marts:   2 tables       │
+└─────────────────────────────┘              │  + 10 data tests         │
+        HttpOperator → Snowflake RAW         └──────────────────────────┘
+                                                  Snowflake analytics
 ```
 
 The EL DAGs emit Airflow **Assets** when fresh raw data lands; the dbt DAG is
-scheduled on those Assets, so transformation runs right after load.
+scheduled on **all three** Assets (AND semantics), so it fires once the whole
+set is fresh — in practice right after the daily `station_information` load
+(weather and status refresh far more often and are already waiting).
 
 ## Layout
 
