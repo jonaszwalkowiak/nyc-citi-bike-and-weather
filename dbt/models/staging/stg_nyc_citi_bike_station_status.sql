@@ -10,8 +10,10 @@ select
     station.value:num_bikes_available::number             as num_bikes_available,
     station.value:num_ebikes_available::number            as num_ebikes_available,
     station.value:num_docks_available::number             as num_docks_available,
-    station.value:is_renting::boolean                     as is_renting,
-    station.value:is_returning::boolean                   as is_returning,
+    -- GBFS reports these as 0/1 integers, not JSON booleans; Snowflake can't cast
+    -- a VARIANT number straight to BOOLEAN, so compare to 1.
+    station.value:is_renting::number = 1                  as is_renting,
+    station.value:is_returning::number = 1                as is_returning,
     to_timestamp_ntz(station.value:last_reported::number) as last_reported_at
 from source,
      lateral flatten(input => raw_json:data.stations) as station
