@@ -117,7 +117,10 @@ make clean                # stop + wipe the Airflow metadata DB
   manifest and switch Cosmos to `LoadMode.DBT_MANIFEST`.
 - Key-pair (not password) auth is intentional: Snowflake blocks single-factor
   password sign-ins for service users.
-- Base image is **Astro Runtime 3.3-2** (`AIRFLOW_HOME=/usr/local/airflow`, user
-  `astro`). Because the Astro entrypoint doesn't auto-migrate the DB, the
-  `airflow-init` service runs `airflow db migrate` explicitly. To upgrade, bump
-  the tag in `docker/Dockerfile` + the image tag in `docker-compose.yml`.
+- Base image is **Astro Runtime 3.3-2 on Python 3.13** (`AIRFLOW_HOME=/usr/local/airflow`,
+  user `astro`). The `-python-3.13` pin is deliberate: Runtime 3.3 defaults to
+  Python 3.14, which **dbt-core can't import yet** (mashumaro error) — Airflow 3.3
+  itself is happy on 3.13. Because the Astro entrypoint doesn't auto-migrate the
+  DB, the `airflow-init` service runs `airflow db migrate` explicitly. To upgrade,
+  bump the tag in `docker/Dockerfile` + `docker-compose.yml` (keep a Python ≤3.13
+  variant until dbt supports 3.14).

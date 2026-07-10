@@ -1,6 +1,6 @@
 # NYC Citi Bike + Weather — ELT stack (Airflow 3.3 + dbt via Cosmos + Snowflake)
 #
-# Base image: Astro Runtime 3.3-2 (Airflow 3.3.0). LocalExecutor (no Redis/Celery).
+# Base image: Astro Runtime 3.3-2, Python 3.13 (Airflow 3.3.0). LocalExecutor (no Redis/Celery).
 # Custom image bundles the Snowflake/HTTP providers, Cosmos, and dbt-snowflake
 # (in an isolated venv). AIRFLOW_HOME is /usr/local/airflow on this image.
 #

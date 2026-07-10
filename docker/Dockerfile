@@ -5,7 +5,13 @@
 # The Astro Runtime base image has ONBUILD triggers that (as root) auto-install
 # packages.txt (apt) and requirements.txt (pip), then copy the build context into
 # AIRFLOW_HOME. So we only add the dbt venv here.
-FROM astrocrpublic.azurecr.io/runtime:3.3-2
+#
+# The `-python-3.13` pin is DELIBERATE: Runtime 3.3 defaults to Python 3.14, but
+# dbt-core can't import on 3.14 yet (mashumaro raises
+# "UnserializableField: Field 'schema'"), so `dbt ls` fails at DAG parse. Airflow
+# 3.3 runs fine on 3.13. Do NOT switch to the plain `runtime:3.3-x` tag until dbt
+# officially supports Python 3.14.
+FROM astrocrpublic.azurecr.io/runtime:3.3-2-python-3.13
 
 # dbt in its own venv (isolated from the Airflow environment)
 USER root
